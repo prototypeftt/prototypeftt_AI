@@ -8,9 +8,9 @@ from sklearn.metrics import precision_score
 api = KaggleApi()
 api.authenticate()
 
-# api.dataset_download_files('andrewmvd/sp-500-stocks', path='stockDatasets', unzip=True)
-# api.dataset_download_files('sudalairajkumar/cryptocurrency-historical-prices-coingecko', path='./cryptoDatasets',
-# unzip=True)
+api.dataset_download_files('andrewmvd/sp-500-stocks', path='stockDatasets', unzip=True)
+api.dataset_download_files('sudalairajkumar/cryptocurrency-historical-prices-coingecko', path='./cryptoDatasets',
+unzip=True)
 
 df = pd.read_csv("stockDatasets/sp500_stocks.csv", parse_dates=['Date'], index_col=['Date'])
 del df["Adj Close"]
