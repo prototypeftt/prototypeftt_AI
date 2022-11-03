@@ -32,7 +32,7 @@ AMZN = companyDF("AMZN")
 GOOGL = companyDF("GOOGL")
 GOOG = companyDF("GOOG")
 
-# Training an initial machine learning model
+# Training an initial machine learning model 1
 
 model = RandomForestClassifier(n_estimators=1000, min_samples_split=50, random_state=1)
 
