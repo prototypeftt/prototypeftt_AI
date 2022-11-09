@@ -87,7 +87,7 @@ for company in companies:
     temp = train(company)
     predictions1 = pd.concat([predictions1, temp])
 
-predictions1['crypto'] = names
+predictions1['stock'] = names
 
 predictions1 = predictions1.reset_index()
 
