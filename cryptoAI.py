@@ -7,6 +7,8 @@ from sklearn.ensemble import RandomForestClassifier
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+pd.set_option('mode.chained_assignment', None)
+
 api = KaggleApi()
 api.authenticate()
 
@@ -32,6 +34,52 @@ BTC = cryptoDF(btc)
 ETH = cryptoDF(eth)
 
 cryptos = [BTC, ETH]
+names = ['BTC', 'ETH']
+
+closePrices = []
+incresedPrices = []
+decresedPrices = []
+
+
+# last 30 days mean of increase or drop
+
+def increase(crypto):
+    tempDF = crypto.tail(30)
+    tempDF['Difference'] = tempDF['price'] - tempDF['Tommorow']
+    tempDF['Percentage'] = tempDF['Difference'] / tempDF['price']
+    tempDF = tempDF[tempDF['Percentage'] >= 0]
+
+    return tempDF["Percentage"].mean()
+
+
+def decrease(crypto):
+    tempDF = crypto.tail(30)
+    tempDF['Difference'] = tempDF['price'] - tempDF['Tommorow']
+    tempDF['Percentage'] = tempDF['Difference'] / tempDF['price'] * (-1)
+    tempDF = tempDF[tempDF['Percentage'] >= 0]
+
+    return tempDF["Percentage"].mean()
+
+
+def closePrice(crypto):
+    tempDF = crypto.tail(1)
+    return round((tempDF.iloc[0]['price']), 2)
+
+
+def increasedPrice(crypto):
+    temp = closePrice(crypto)
+    return round((temp + temp * increase(crypto)), 2)
+
+
+def decreasedPrice(crypto):
+    temp = closePrice(crypto)
+    return round((temp - temp * increase(crypto)), 2)
+
+
+for crypto in cryptos:
+    closePrices.append(closePrice(crypto))
+    decresedPrices.append(decreasedPrice(crypto))
+    incresedPrices.append(increasedPrice(crypto))
 
 model = RandomForestClassifier(n_estimators=200, min_samples_split=50, random_state=1)
 
@@ -70,7 +118,7 @@ def train(crypto):
     predictions = backtest(crypto, model, predictors)
 
     predictions = predictions.tail(1)
-    
+
     return predictions
 
 
@@ -80,8 +128,27 @@ for crypto in cryptos:
     temp = train(crypto)
     predictions1 = pd.concat([predictions1, temp])
 
-names = ['BTC', 'ETH']
 predictions1['crypto'] = names
+
+predictions1['close price'] = closePrices
+
+predictions1['increased price'] = incresedPrices
+
+predictions1['decreased price'] = decresedPrices
+
+
+def predictedPrice(row):
+    if row['Predictions'] == 0:
+        val = row['decreased price']
+    else:
+        val = row['increased price']
+    return val
+
+
+predictions1['predicted price'] = predictions1.apply(predictedPrice, axis=1)
+
+predictions1 = predictions1.drop('decreased price', axis=1)
+predictions1 = predictions1.drop('increased price', axis=1)
 
 del predictions1['Target']
 
