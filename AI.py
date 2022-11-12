@@ -6,6 +6,9 @@ from kaggle.api.kaggle_api_extended import KaggleApi
 from sklearn.ensemble import RandomForestClassifier
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+pd.set_option('mode.chained_assignment', None)
 
 api = KaggleApi()
 api.authenticate()
@@ -31,6 +34,54 @@ MSFT = companyDF("MSFT")
 AMZN = companyDF("AMZN")
 GOOGL = companyDF("GOOGL")
 GOOG = companyDF("GOOG")
+
+companies = [AAPL, MSFT, AMZN, GOOGL, GOOG]
+names = ['AAPL', 'MSFT', 'AMZN', 'GOOGL', 'GOOG']
+
+closePrices = []
+incresedPrices = []
+decresedPrices = []
+
+
+# last 30 days mean of increase or drop
+
+def increase(company):
+    tempDF = company.tail(30)
+    tempDF['Difference'] = tempDF['Close'] - tempDF['Tommorow']
+    tempDF['Percentage'] = tempDF['Difference'] / tempDF['Close']
+    tempDF = tempDF[tempDF['Percentage'] >= 0]
+
+    return tempDF["Percentage"].mean()
+
+
+def decrease(company):
+    tempDF = company.tail(30)
+    tempDF['Difference'] = tempDF['Close'] - tempDF['Tommorow']
+    tempDF['Percentage'] = tempDF['Difference'] / tempDF['Close'] * (-1)
+    tempDF = tempDF[tempDF['Percentage'] >= 0]
+
+    return tempDF["Percentage"].mean()
+
+
+def closePrice(company):
+    tempDF = company.tail(1)
+    return round((tempDF.iloc[0]['Close']), 2)
+
+
+def increasedPrice(company):
+    temp = closePrice(company)
+    return round((temp + temp * increase(company)), 2)
+
+
+def decreasedPrice(company):
+    temp = closePrice(company)
+    return round((temp - temp * increase(company)), 2)
+
+
+for company in companies:
+    closePrices.append(closePrice(company))
+    decresedPrices.append(decreasedPrice(company))
+    incresedPrices.append(increasedPrice(company))
 
 # Training an initial machine learning model 1
 model = RandomForestClassifier(n_estimators=200, min_samples_split=50, random_state=1)
@@ -78,9 +129,6 @@ def train(company):
     return predictions
 
 
-companies = [AAPL, MSFT, AMZN, GOOGL, GOOG]
-names = ['AAPL', 'MSFT', 'AMZN', 'GOOGL', 'GOOG']
-
 predictions1 = pd.DataFrame()
 
 for company in companies:
@@ -88,6 +136,26 @@ for company in companies:
     predictions1 = pd.concat([predictions1, temp])
 
 predictions1['stock'] = names
+# added
+predictions1['close price'] = closePrices
+
+predictions1['increased price'] = incresedPrices
+
+predictions1['decreased price'] = decresedPrices
+
+
+def predictedPrice(row):
+    if row['Predictions'] == 0:
+        val = row['decreased price']
+    else:
+        val = row['increased price']
+    return val
+
+
+predictions1['predicted price'] = predictions1.apply(predictedPrice, axis=1)
+
+predictions1 = predictions1.drop('decreased price', axis=1)
+predictions1 = predictions1.drop('increased price', axis=1)
 
 predictions1 = predictions1.reset_index()
 
