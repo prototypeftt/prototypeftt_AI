@@ -1,4 +1,5 @@
 import os
+import urllib
 import warnings
 
 import pandas as pd
@@ -35,6 +36,7 @@ ETH = cryptoDF(eth)
 
 cryptos = [BTC, ETH]
 names = ['BTC', 'ETH']
+fullNames = ['Bitcoin', 'Ethereum']
 
 closePrices = []
 incresedPrices = []
@@ -165,11 +167,31 @@ if not os.path.exists("predictions"):
 if not os.path.exists("graphs"):
     os.makedirs("graphs")
 
-predictions1.loc[0].to_json("predictions/BTC.json".format(0))
-predictions1.loc[1].to_json("predictions/ETH.json".format(1))
-
 fig = BTC.plot.line(y="price", use_index=True).get_figure()
 fig.savefig("graphs/BTC.pdf")
 
 fig = ETH.plot.line(y="price", use_index=True).get_figure()
 fig.savefig("graphs/ETH.pdf")
+
+print("calls")
+
+url = 'https://us-central1-prototypeftt-cca12.cloudfunctions.net/api/ai/asset/add'
+
+for i in range(0, 2):
+    values = {
+        'assetId': predictions1.iloc[i]['crypto'],
+        'assetCategory': 'CRYPTO',
+        'assetName': fullNames[i],
+        'assetClosePrice': predictions1.iloc[i]['close price'],
+        'assetPrediction': predictions1.iloc[i]['Predictions'],
+        'assetPredictedPrice': predictions1.iloc[i]['predicted price'],
+        'assetDate': predictions1.iloc[i]['date']
+
+    }
+    data = urllib.parse.urlencode(values)
+    data = data.encode('ascii')  # data should be bytes
+    req = urllib.request.Request(url, data)
+    with urllib.request.urlopen(req) as response:
+        the_page = response.read()
+
+print("calls end")

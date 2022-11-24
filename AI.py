@@ -1,4 +1,5 @@
 import os
+import urllib
 import warnings
 
 import pandas as pd
@@ -161,8 +162,6 @@ predictions1 = predictions1.reset_index()
 
 predictions1['Date'] = predictions1['Date'].dt.strftime('%d-%m-%Y')
 del predictions1['Target']
-print("predictions:")
-print(predictions1)
 
 if not os.path.exists("predictions"):
     os.makedirs("predictions")
@@ -170,11 +169,21 @@ if not os.path.exists("predictions"):
 if not os.path.exists("graphs"):
     os.makedirs("graphs")
 
-predictions1.loc[0].to_json("predictions/AAPL.json".format(0))
-predictions1.loc[1].to_json("predictions/MSFT.json".format(1))
-predictions1.loc[2].to_json("predictions/AMZN.json".format(2))
-predictions1.loc[3].to_json("predictions/GOOGL.json".format(3))
-predictions1.loc[4].to_json("predictions/GOOG.json".format(4))
+properNames = ["Apple", "Microsoft", "Amazon", "Alphabet1", "Alphabet2"]
+
+final = pd.DataFrame()
+
+final['assetId'] = predictions1['stock']
+final['assetCategory'] = "STOCK"
+final['assetName'] = properNames
+final['assetClosePrice'] = predictions1['close price']
+final['assetPrediction'] = predictions1['Predictions']
+final['assetPredictedPrice'] = predictions1['predicted price']
+final['assetDate'] = predictions1['Date']
+final.set_index('assetId')
+
+print("final:")
+print(final)
 
 fig = AAPL.plot.line(y="Close", use_index=True).get_figure()
 fig.savefig("graphs/AAPL.pdf")
@@ -190,3 +199,26 @@ fig.savefig("graphs/GOOGL.pdf")
 
 fig = GOOG.plot.line(y="Close", use_index=True).get_figure()
 fig.savefig("graphs/GOOG.pdf")
+
+print("calls")
+
+url = 'https://us-central1-prototypeftt-cca12.cloudfunctions.net/api/ai/asset/add'
+
+for i in range(0, 5):
+    values = {
+        'assetId': final.iloc[i]['assetId'],
+        'assetCategory': final.iloc[i]['assetCategory'],
+        'assetName': final.iloc[i]['assetName'],
+        'assetClosePrice': final.iloc[i]['assetClosePrice'],
+        'assetPrediction': final.iloc[i]['assetPrediction'],
+        'assetPredictedPrice': final.iloc[i]['assetPredictedPrice'],
+        'assetDate': final.iloc[i]['assetDate']
+
+    }
+    data = urllib.parse.urlencode(values)
+    data = data.encode('ascii')  # data should be bytes
+    req = urllib.request.Request(url, data)
+    with urllib.request.urlopen(req) as response:
+        the_page = response.read()
+
+print("calls end")
