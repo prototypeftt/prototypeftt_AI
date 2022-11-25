@@ -16,14 +16,14 @@ api.authenticate()
 
 api.dataset_download_files('andrewmvd/sp-500-stocks', path='stockDatasets', unzip=True)
 
-# create dataset from csv file
+# create df from csv file
 
 df = pd.read_csv("stockDatasets/sp500_stocks.csv", parse_dates=['Date'], index_col=['Date'])
 del df["Adj Close"]
 df.dropna(how='any', inplace=True)
 
 
-# create data frame for company
+# create df for company
 def companyDF(company):
     tempDF = df[df['Symbol'] == company]
     tempDF = tempDF.assign(Tommorow=tempDF.Close.shift(-1))
@@ -34,7 +34,7 @@ def companyDF(company):
     return tempDF
 
 
-# create data frame for each company
+# create dfs for each company
 
 AAPL = companyDF("AAPL")
 MSFT = companyDF("MSFT")
@@ -52,7 +52,7 @@ names = ['AAPL', 'MSFT', 'AMZN', 'GOOGL', 'GOOG']
 properNames = ["Apple", "Microsoft", "Amazon", "Alphabet1", "Alphabet2"]
 
 
-# last 30 days mean of increase or drop
+# get last 30 days mean of increase or drop
 
 def increase(company):
     tempDF = company.tail(30)
@@ -70,33 +70,33 @@ def decrease(company):
     return tempDF["Percentage"].mean()
 
 
-# asset movement in last 2 days
+# get asset movement in last 2 days
 def assetMovement(company):
     tempDF = company.tail(1)
     return round((tempDF.iloc[0]['assetMovement']), 2)
 
 
-# return close price
+# get close price
 def closePrice(company):
     tempDF = company.tail(1)
     return round((tempDF.iloc[0]['Close']), 2)
 
 
-# return increased price
+# get increased price
 
 def increasedPrice(company):
     temp = closePrice(company)
     return round((temp + temp * increase(company)), 2)
 
 
-# return decreased price
+# get decreased price
 
 def decreasedPrice(company):
     temp = closePrice(company)
     return round((temp - temp * increase(company)), 2)
 
 
-# check price change indicator
+# get the price drop or increase
 def predictedPrice(row):
     if row['Predictions'] == 0:
         val = row['decreased price']
