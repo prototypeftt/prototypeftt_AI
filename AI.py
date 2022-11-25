@@ -222,3 +222,21 @@ for i in range(0, 5):
         the_page = response.read()
 
 print("calls end")
+
+from firebase_admin import credentials, initialize_app, storage
+
+# Init firebase with your credentials
+cred = credentials.Certificate("serviceAccountKey.json")
+initialize_app(cred, {'storageBucket': 'prototypeftt-cca12.appspot.com'})
+
+graphs = ['graphs/AAPL.pdf', 'graphs/AMZN.pdf', 'graphs/GOOG.pdf', 'graphs/GOOGL.pdf', 'graphs/MSFT.pdf', ]
+
+# Put your local file path
+
+for graph in graphs:
+    fileName = graph
+    bucket = storage.bucket()
+    blob = bucket.blob(fileName)
+    blob.upload_from_filename(fileName)
+
+    # Opt : if you want to make public access from the URL
