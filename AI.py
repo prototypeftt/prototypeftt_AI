@@ -7,13 +7,16 @@ from kaggle.api.kaggle_api_extended import KaggleApi
 from sklearn.ensemble import RandomForestClassifier
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
-
 pd.set_option('mode.chained_assignment', None)
+
+# downloading datasets
 
 api = KaggleApi()
 api.authenticate()
 
 api.dataset_download_files('andrewmvd/sp-500-stocks', path='stockDatasets', unzip=True)
+
+# create dataset from csv file
 
 df = pd.read_csv("stockDatasets/sp500_stocks.csv", parse_dates=['Date'], index_col=['Date'])
 del df["Adj Close"]
@@ -174,9 +177,6 @@ final = final.reset_index()
 final.set_index('Date')
 final['Date'] = final['Date'].dt.strftime('%d-%m-%Y')
 
-print("final:")
-print(final)
-
 if not os.path.exists("predictions"):
     os.makedirs("predictions")
 
@@ -208,7 +208,7 @@ for i in range(0, 5):
     values = {
         'assetId': final.iloc[i]['stock'],
         'assetCategory': final.iloc[i]['assetCategory'],
-        'assetName': properNames[i],
+        'assetName': final.iloc[i]['assetName'],
         'assetClosePrice': final.iloc[i]['close price'],
         'assetPrediction': final.iloc[i]['Predictions'],
         'assetPredictedPrice': final.iloc[i]['predicted price'],
@@ -216,6 +216,7 @@ for i in range(0, 5):
         'assetMovement': final.iloc[i]['assetMovement']
 
     }
+
     data = urllib.parse.urlencode(values)
     data = data.encode('ascii')  # data should be bytes
     req = urllib.request.Request(url, data)
